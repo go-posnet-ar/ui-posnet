@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Pago QR — POSNET</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Estilos específicos para la pantalla del celular */
+    body {
+      justify-content: flex-start;
+      padding: 0;
+    }
+
+    .pay-card {
+      width: 100%;
+      max-width: 420px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 0;
+      border: none;
+    }
+
+    @media (min-width: 440px) {
+      body { align-items: center; padding: 20px; }
+      .pay-card {
+        min-height: auto;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+    }
+
+    .pay-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
+      gap: 0;
+    }
+
+    /* Logo del comercio */
+    .merchant-logo {
+      width: 64px; height: 64px;
+      background: var(--blue-dim);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-size: 22px;
+      color: white;
+      letter-spacing: -1px;
+      margin-bottom: 14px;
+    }
+
+    .merchant-name {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-2);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    /* Separador */
+    .pay-divider {
+      width: 100%;
+      border: none;
+      border-top: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    /* Monto grande */
+    .pay-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-2);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .pay-amount {
+      font-family: var(--mono);
+      font-size: 56px;
+      color: var(--green);
+      letter-spacing: -3px;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .pay-currency {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-3);
+      margin-bottom: 28px;
+    }
+
+    /* Barra de TTL */
+    .pay-ttl-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .pay-ttl-fill {
+      height: 100%;
+      background: var(--green);
+      border-radius: 2px;
+      transition: width 1s linear, background 1s;
+    }
+    .pay-ttl-text {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-2);
+      margin-bottom: 0;
+    }
+    .pay-ttl-text b { color: var(--text-1); }
+
+    /* Pantalla de procesamiento */
+    .pay-spinner { margin-bottom: 20px; }
+
+    /* Pantalla de resultado */
+    .pay-result-icon {
+      font-size: 72px;
+      margin-bottom: 16px;
+    }
+    .pay-result-title {
+      font-family: var(--mono);
+      font-size: 24px;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    .pay-result-sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-2);
+      text-align: center;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .pay-auth-code {
+      font-family: var(--mono);
+      font-size: 16px;
+      letter-spacing: 4px;
+      padding: 10px 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Pantalla de error */
+    .pay-error-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    .pay-error-msg {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text-2);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .pay-footer {
+      padding: 16px 24px 32px;
+      text-align: center;
+    }
+    .pay-footer-text {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-3);
+      letter-spacing: 1px;
+    }
+
+    /* Utilidades para esta página */
+    .pay-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+    .pay-screen.active { display: flex; animation: fadeUp .35s ease forwards; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="pay-card">
+
+  <!-- Header -->
+  <div class="topbar">
+    <div class="topbar-brand">POSNET QR</div>
+    <div class="topbar-status">
+      <div class="status-dot"></div>
+      SEGURO
+    </div>
+  </div>
+
+  <div class="pay-body">
+
+    <!-- ── Pantalla: monto (inicial) ── -->
+    <div id="pay-amount" class="pay-screen">
+      <div class="merchant-logo">PN</div>
+      <div class="merchant-name">POSNET SIMULADOR</div>
+      <hr class="pay-divider">
+      <div class="pay-label">TOTAL A PAGAR</div>
+      <div class="pay-amount" id="amountValue">$ 0,00</div>
+      <div class="pay-currency" id="currencyLabel">Pesos Argentinos</div>
+      <div class="pay-ttl-bar">
+        <div class="pay-ttl-fill" id="ttlFill" style="width:100%"></div>
+      </div>
+      <div class="pay-ttl-text">
+        Expira en <b id="ttlDisplay">5:00</b>
+      </div>
+    </div>
+
+    <!-- ── Pantalla: procesando ── -->
+    <div id="pay-processing" class="pay-screen">
+      <div class="spinner pay-spinner"></div>
+      <div class="spinner-text">
+        Procesando pago...<br>
+        <span class="spinner-step" id="procStep">verificando antifraude</span>
+      </div>
+    </div>
+
+    <!-- ── Pantalla: resultado ── -->
+    <div id="pay-result" class="pay-screen">
+      <div class="pay-result-icon" id="resultIcon"></div>
+      <div class="pay-result-title" id="resultTitle"></div>
+      <div class="pay-result-sub" id="resultSub"></div>
+      <div class="pay-auth-code hidden" id="resultCode"></div>
+    </div>
+
+    <!-- ── Pantalla: error ── -->
+    <div id="pay-error" class="pay-screen">
+      <div class="pay-error-icon">⚠️</div>
+      <div class="pay-error-msg" id="errorMsg">Ocurrió un error</div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="pay-footer">
+    <div class="pay-footer-text">TRANSACCIÓN SEGURA · TERMINAL TRM-0042</div>
+  </div>
+
+</div>
+
+<script src="../js/pay.js"></script>
+</body>
+</html>

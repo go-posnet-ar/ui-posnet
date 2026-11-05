@@ -1,0 +1,391 @@
+/* ============================================================
+   POSNET Frontend — Estilos compartidos
+   Tema: terminal de pago industrial / dark mode
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;500;600&display=swap');
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-deep:    #0a0e1a;
+  --bg-card:    #111827;
+  --bg-surface: #1c2535;
+  --bg-input:   #0d1520;
+
+  --border:     #1e2d45;
+  --border-hi:  #2a4060;
+
+  --green:      #00e5a0;
+  --green-dim:  #00a370;
+  --green-glow: rgba(0, 229, 160, 0.15);
+
+  --red:        #ff4d6d;
+  --red-dim:    #cc1a3a;
+
+  --amber:      #ffb830;
+
+  --blue:       #3b82f6;
+  --blue-dim:   #1d4ed8;
+
+  --text-1:     #e8edf5;
+  --text-2:     #7a8ba0;
+  --text-3:     #3d4f63;
+
+  --mono:       'Share Tech Mono', monospace;
+  --sans:       'Inter', -apple-system, sans-serif;
+
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  20px;
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg-deep);
+  color: var(--text-1);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  /* Patrón de fondo sutil */
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(0,229,160,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(59,130,246,0.03) 0%, transparent 50%);
+}
+
+/* ── Card base ──────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* ── Barra superior ─────────────────────────────────────────── */
+.topbar {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar-brand {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--green);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.topbar-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-2);
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 2.5s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Pantalla ───────────────────────────────────────────────── */
+.screen {
+  background: var(--bg-input);
+  margin: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  padding: 22px 18px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+.screen-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--blue);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+/* ── Monto ──────────────────────────────────────────────────── */
+.amount-block { text-align: center; margin-bottom: 20px; }
+.amount-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-2);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.amount-value {
+  font-family: var(--mono);
+  font-size: 38px;
+  font-weight: normal;
+  color: var(--green);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.amount-currency {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* ── Teclado ─────────────────────────────────────────────────── */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.key {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 15px 10px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 18px;
+  color: var(--text-1);
+  cursor: pointer;
+  user-select: none;
+  transition: background 80ms, border-color 80ms, transform 80ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.key:hover { background: #243044; border-color: var(--border-hi); }
+.key:active, .key.pressed {
+  background: #0f2a45;
+  border-color: var(--blue);
+  transform: scale(0.94);
+}
+.key-del {
+  background: #1a0a0f;
+  color: var(--red);
+  border-color: #3a1020;
+}
+.key-del:hover { background: #2d1020; }
+.key-ok {
+  background: #051a12;
+  color: var(--green);
+  border-color: var(--green-dim);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+.key-ok:hover { background: #0a2a1e; }
+.key-ok:active { background: var(--green-glow); }
+
+/* ── Botones ─────────────────────────────────────────────────── */
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+.btn {
+  flex: 1; padding: 11px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 100ms, transform 80ms;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:active { transform: scale(0.97); }
+.btn-cancel {
+  background: #120508;
+  color: var(--red);
+  border-color: var(--red-dim);
+}
+.btn-cancel:hover { background: #220a10; }
+.btn-pay {
+  background: #051a12;
+  color: var(--green);
+  border-color: var(--green-dim);
+}
+.btn-pay:hover { background: #0a2a1e; }
+.btn-full {
+  width: 100%; margin-top: 10px;
+  background: #0d1f35;
+  color: var(--blue);
+  border-color: var(--blue-dim);
+  padding: 12px;
+  text-align: center;
+}
+.btn-full:hover { background: #162d4a; }
+
+/* ── QR ──────────────────────────────────────────────────────── */
+.qr-container {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+}
+.qr-amount {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--green);
+}
+.qr-frame {
+  background: #fff;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+.qr-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text-3);
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* ── Countdown ───────────────────────────────────────────────── */
+.countdown {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--red);
+  width: 100%;
+}
+.countdown-bar {
+  flex: 1; height: 3px;
+  background: var(--border);
+  border-radius: 2px; overflow: hidden;
+}
+.countdown-fill {
+  height: 100%; background: var(--green);
+  border-radius: 2px; transition: width 1s linear;
+}
+.countdown-fill.warn { background: var(--amber); }
+.countdown-fill.danger { background: var(--red); }
+
+/* ── Spinner ─────────────────────────────────────────────────── */
+.spinner-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+}
+.spinner {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-text {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-2);
+  text-align: center;
+  line-height: 1.7;
+}
+.spinner-step { color: var(--blue); }
+
+/* ── Resultado ───────────────────────────────────────────────── */
+.result-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  animation: fadeUp .4s ease forwards;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.result-icon { font-size: 52px; }
+.result-text {
+  font-family: var(--mono);
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+.result-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-2);
+  text-align: center;
+  letter-spacing: 1px;
+}
+.result-code {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 3px;
+  padding: 8px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* ── Footer del terminal ─────────────────────────────────────── */
+.terminal-footer {
+  background: var(--bg-deep);
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  justify-content: space-between;
+}
+.terminal-footer span {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+}
+
+/* ── Config API ──────────────────────────────────────────────── */
+.api-config {
+  margin: 10px 14px 0;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.api-config label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.api-config input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--blue);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Error inline ────────────────────────────────────────────── */
+.error-msg {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--red);
+  text-align: center;
+  min-height: 14px;
+  margin-top: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Utilidades ──────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.text-green { color: var(--green); }
+.text-red   { color: var(--red); }
+.text-amber { color: var(--amber); }
+.text-blue  { color: var(--blue); }
+.text-muted { color: var(--text-2); }
+
+/* ── Responsive mínimo ───────────────────────────────────────── */
+@media (max-width: 400px) {
+  body { padding: 12px; }
+  .amount-value { font-size: 30px; }
+  .key { padding: 12px 8px; font-size: 16px; }
+}

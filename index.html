@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POSNET — Simulador de Cajero</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- QR Code library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="card" style="width: 360px;">
+
+  <!-- Barra superior -->
+  <div class="topbar">
+    <div class="topbar-brand">POSNET</div>
+    <div class="topbar-status">
+      <div class="status-dot"></div>
+      EN LÍNEA
+    </div>
+  </div>
+
+  <!-- Config API -->
+  <div class="api-config">
+    <label>API:</label>
+    <input type="text" id="apiBase" placeholder="http://192.168.0.2:9091" />
+  </div>
+
+  <!-- ── Pantalla: ingreso de monto ── -->
+  <div id="screen-amount" class="screen hidden">
+    <div class="screen-title">ingrese monto</div>
+
+    <div class="amount-block">
+      <div class="amount-label">MONTO A COBRAR</div>
+      <div class="amount-value" id="amountDisplay">0</div>
+      <div class="amount-currency">ARS</div>
+    </div>
+
+    <div class="keypad">
+      <div class="key" onclick="pressKey('1')">1</div>
+      <div class="key" onclick="pressKey('2')">2</div>
+      <div class="key" onclick="pressKey('3')">3</div>
+      <div class="key" onclick="pressKey('4')">4</div>
+      <div class="key" onclick="pressKey('5')">5</div>
+      <div class="key" onclick="pressKey('6')">6</div>
+      <div class="key" onclick="pressKey('7')">7</div>
+      <div class="key" onclick="pressKey('8')">8</div>
+      <div class="key" onclick="pressKey('9')">9</div>
+      <div class="key key-del" onclick="pressKey('del')">&#9003;</div>
+      <div class="key" onclick="pressKey('0')">0</div>
+      <div class="key key-ok" onclick="createSession()">OK</div>
+    </div>
+
+    <div class="error-msg" id="amountError"></div>
+  </div>
+
+  <!-- ── Pantalla: QR generado ── -->
+  <div id="screen-qr" class="screen hidden">
+    <div class="screen-title">escanear para pagar</div>
+
+    <div class="qr-container">
+      <div class="qr-amount" id="qrAmount"></div>
+      <div class="qr-frame" id="qrCode"></div>
+      <div class="qr-hint">APUNTE LA CÁMARA AL CÓDIGO QR</div>
+      <a id="qrUrl" href="#" target="_blank"
+         style="font-size:9px; color:var(--text-3); word-break:break-all; text-align:center; text-decoration:none; font-family:var(--mono);">
+      </a>
+      <div class="countdown" style="width:220px;">
+        <span id="countdownText">5:00</span>
+        <div class="countdown-bar">
+          <div class="countdown-fill" id="countdownFill" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="cancelSession()">CANCELAR</button>
+      <button class="btn btn-pay" onclick="simulatePay()">SIMULAR PAGO</button>
+    </div>
+    <div class="error-msg" id="qrError"></div>
+  </div>
+
+  <!-- ── Pantalla: procesando ── -->
+  <div id="screen-processing" class="screen hidden">
+    <div class="screen-title">procesando</div>
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <div class="spinner-text">
+        autorizando transacción<br>
+        <span class="spinner-step" id="processingStep"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pantalla: resultado ── -->
+  <div id="screen-result" class="screen hidden">
+    <div class="screen-title" id="resultTitle">resultado</div>
+    <div class="result-wrap">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-text" id="resultText"></div>
+      <div class="result-code" id="resultCode" style="display:none"></div>
+      <div class="result-sub" id="resultAmount"></div>
+    </div>
+    <button class="btn btn-full" onclick="newTransaction()">NUEVA TRANSACCIÓN</button>
+  </div>
+
+  <!-- Footer del terminal -->
+  <div class="terminal-footer">
+    <span>TRM-0042</span>
+    <span id="footerTime"></span>
+    <span>v1.0.0</span>
+  </div>
+
+</div>
+
+<script src="js/posnet.js"></script>
+</body>
+</html>
