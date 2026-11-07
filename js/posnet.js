@@ -2,6 +2,15 @@
 // Maneja: ingreso de monto → creación de sesión → generación de QR → polling del resultado
 
 const API_BASE_KEY = 'posnet_api_base';
+const TERMINAL_TOKEN_KEY = 'posnet_terminal_token';
+
+// API Gateway de posnet. El valor anterior apuntaba al puerto gRPC de Terminal Gateway.
+const DEFAULT_API_BASE = 'http://192.168.0.2:8000';
+const LEGACY_API_BASE = 'http://192.168.0.2:9091';
+
+// Terminal de prueba de posnet. Sin tokens configurados, Terminal Gateway identifica al terminal
+// por este encabezado; con tokens, lo ignora y usa el del token.
+const TEST_TERMINAL_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
 const state = {
   amountCents: 0,
@@ -23,12 +32,20 @@ function init() {
 }
 
 function loadApiBase() {
-  const saved = localStorage.getItem(API_BASE_KEY) || 'http://192.168.0.2:9091';
+  let saved = localStorage.getItem(API_BASE_KEY);
+  if (!saved || saved === LEGACY_API_BASE) saved = DEFAULT_API_BASE;
   document.getElementById('apiBase').value = saved;
+  // El token del terminal se guarda solo mientras dure la pestaña.
+  document.getElementById('terminalToken').value = sessionStorage.getItem(TERMINAL_TOKEN_KEY) || '';
 }
 
 function saveApiBase() {
   localStorage.setItem(API_BASE_KEY, getApiBase());
+  sessionStorage.setItem(TERMINAL_TOKEN_KEY, getTerminalToken());
+}
+
+function getTerminalToken() {
+  return document.getElementById('terminalToken').value.trim();
 }
 
 function getApiBase() {
@@ -83,7 +100,7 @@ async function createSession() {
   try {
     const res = await fetch(getApiBase() + '/api/sessions/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: terminalHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ amount_cents: state.amountCents, currency: 'ARS' }),
     });
 
@@ -256,11 +273,15 @@ async function cancelSession() {
 
   if (state.txId) {
     try {
-      await fetch(getApiBase() + '/api/sessions/' + state.txId + '/cancel', {
+      const res = await fetch(getApiBase() + '/sessions/' + state.txId + '/cancel', {
         method: 'POST',
-        headers: { 'X-Terminal-ID': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
+        headers: terminalHeaders({ 'X-Terminal-ID': TEST_TERMINAL_ID }),
       });
-    } catch (_) {}
+      // Si no se pudo cancelar (por ejemplo, ya se está procesando), la sesión vence sola.
+      if (!res.ok) console.warn('no se pudo cancelar la sesión', res.status);
+    } catch (e) {
+      console.warn('no se pudo cancelar la sesión', e);
+    }
   }
   newTransaction();
 }
@@ -332,6 +353,14 @@ function newTransaction() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// terminalHeaders agrega el token del terminal, que Terminal Gateway exige en create y cancel
+// cuando tiene TERMINAL_TOKENS_FILE.
+function terminalHeaders(headers = {}) {
+  const token = getTerminalToken();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return headers;
+}
 
 // sessionHeaders agrega el token de la sesión, que Terminal Gateway exige en /pay y /status.
 function sessionHeaders(headers = {}) {
