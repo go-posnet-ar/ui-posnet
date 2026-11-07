@@ -306,8 +306,9 @@ function showResult(type, data) {
       sub: amountStr,
     },
     rejected: {
-      icon: '❌',
-      text: 'RECHAZADO',
+      icon: data?.capture_card ? '⚠️' : '❌',
+      // El emisor ordenó retener la tarjeta (o está en la blocklist): el cajero no la devuelve.
+      text: data?.capture_card ? 'RETENER TARJETA' : 'RECHAZADO',
       textClass: 'text-red',
       code: data?.rejection_reason || 'transacción rechazada',
       sub: amountStr,

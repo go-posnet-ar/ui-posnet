@@ -25,7 +25,9 @@ GET /api/sessions/{id}/status  (polling cada 1,5 s)                  GET  /api/s
 1. El cajero ingresa el monto y crea la sesión. La respuesta trae `qr_content`, la URL de la página de pago.
 2. El cajero dibuja el QR y consulta el estado hasta tener un resultado, o hasta que vence la sesión (5 minutos).
 3. El teléfono abre la URL, consulta la sesión, muestra el monto y, 1,5 s después, paga solo.
-4. Las dos páginas muestran el resultado: aprobado con su código de autorización, rechazado con su motivo, o vencido.
+4. Las dos páginas muestran el resultado: aprobado con su código de autorización, rechazado con su motivo, o vencido. Si
+   el rechazo trae `capture_card` (el emisor ordenó retener la tarjeta, o está en la blocklist), el cajero muestra
+   **RETENER TARJETA**.
 
 El cajero también tiene **SIMULAR PAGO**, para pagar sin un teléfono, y **CANCELAR**, para cerrar la sesión antes de que se
 pague. Si la sesión ya se está procesando, Terminal Gateway no la cancela y vence sola; el motivo queda en la consola del
