@@ -1,0 +1,17 @@
+# Requiere el stack de posnet levantado: se une a su red edge, que crea el docker-compose de
+# posnet, con la IP fija que el API Gateway declara en GATEWAY_TRUSTED_PROXIES.
+services:
+  posnet-front:
+    build: .
+    image: posnet-front
+    container_name: posnet-front
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    networks:
+      posnet_edge:
+        ipv4_address: 172.30.0.20
+
+networks:
+  posnet_edge:
+    external: true

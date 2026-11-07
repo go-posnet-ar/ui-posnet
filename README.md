@@ -96,53 +96,28 @@ lo exige con `PAY_TOKEN_REQUIRED=true`, el valor por defecto fuera de desarrollo
   `POSNET_HOST` en Terminal Gateway y `GATEWAY_CORS_ALLOWED_ORIGINS` en el API Gateway.
 - **Para escanear con un teléfono,** que esté en la misma red que el host de `POSNET_HOST`.
 
-### Con nginx
+### Con Docker Compose
 
-Guardar esta configuración como `nginx.conf` en la raíz del repo:
-
-```nginx
-server {
-    listen 80;
-    root /usr/share/nginx/html;
-
-    # Cajero
-    location = / {
-        try_files /index.html =404;
-    }
-
-    # Página de pago: el QR apunta a /pay/{id}
-    location /pay/ {
-        try_files /pay.html =404;
-    }
-
-    # La página de pago llama a la API en su mismo origen
-    location /api/ {
-        proxy_pass http://gateway:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    location / {
-        try_files $uri =404;
-    }
-}
-```
-
-Y levantar nginx en la red `edge` de Docker Compose de posnet, con la IP fija `172.30.0.20`. Así llega al API Gateway por su
-nombre, y el API Gateway, que confía en esa IP (`GATEWAY_TRUSTED_PROXIES`), aplica su límite por IP de `/pay` y `/status` a
-cada teléfono, y no a nginx:
+Con el stack de posnet ya levantado, desde la raíz de este repo:
 
 ```bash
-docker run -d --name posnet-front --network posnet_edge --ip 172.30.0.20 -p 5173:80 \
-  -v "$PWD/index.html:/usr/share/nginx/html/index.html:ro" \
-  -v "$PWD/pay.html:/usr/share/nginx/html/pay.html:ro" \
-  -v "$PWD/css:/usr/share/nginx/html/css:ro" \
-  -v "$PWD/js:/usr/share/nginx/html/js:ro" \
-  -v "$PWD/nginx.conf:/etc/nginx/conf.d/default.conf:ro" \
-  nginx:1.27-alpine
+docker compose up -d --build
 ```
 
-Se montan solo los archivos de la aplicación: con el directorio entero, nginx también serviría `.git/` y `nginx.conf`.
+Levanta `posnet-front` en el puerto 5173: una imagen nginx con los archivos de la aplicación y la configuración de
+[`nginx.conf`](nginx.conf). Para aplicar un cambio en el HTML, el CSS o el JavaScript, hay que reconstruirla con el mismo
+comando.
+
+- **Red:** se une a la red `posnet_edge` de posnet, que crea su `docker-compose.yml`, con la IP fija `172.30.0.20`. Así llega
+  al API Gateway por su nombre, y el API Gateway, que confía en esa IP (`GATEWAY_TRUSTED_PROXIES`), aplica su límite por IP
+  de `/pay` y `/status` a cada teléfono, y no a nginx. Si la red no existe, el comando falla: hay que levantar posnet antes.
+- **Archivos servidos:** la imagen solo copia `index.html`, `pay.html`, `css/` y `js/`, así que nginx no sirve `.git/`, el
+  README ni su configuración.
+- **Resolución del gateway:** nginx resuelve `gateway` en cada pedido con el DNS de Docker. Arranca aunque el API Gateway
+  todavía no esté levantado, y sigue funcionando si se recrea con otra IP.
+
+Si ya existe un contenedor `posnet-front` levantado a mano con `docker run`, hay que borrarlo antes:
+`docker rm -f posnet-front`.
 
 ### Configurar el cajero
 
@@ -175,6 +150,7 @@ Si Terminal Gateway exige el token, la última consulta responde `401`: hay que 
 | [`index.html`](index.html), [`js/posnet.js`](js/posnet.js) | Cajero: teclado, QR, cuenta regresiva, polling y resultado |
 | [`pay.html`](pay.html), [`js/pay.js`](js/pay.js) | Página de pago del teléfono |
 | [`css/style.css`](css/style.css) | Estilos de las dos páginas |
+| [`nginx.conf`](nginx.conf), [`Dockerfile`](Dockerfile), [`docker-compose.yml`](docker-compose.yml) | Cómo se sirve: nginx en la red `edge` de posnet |
 
 ## Problemas conocidos
 
