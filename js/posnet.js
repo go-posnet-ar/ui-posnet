@@ -26,6 +26,7 @@ const state = {
 
 function init() {
   loadApiBase();
+  connectWS();
   updateClock();
   setInterval(updateClock, 1000);
   showScreen('amount');
@@ -96,6 +97,7 @@ async function createSession() {
   }
 
   saveApiBase();
+  connectWS(); // Si cambió la API o el token, se reconecta
 
   try {
     const res = await fetch(getApiBase() + '/api/sessions/create', {
@@ -351,6 +353,95 @@ function newTransaction() {
 
   document.getElementById('amountDisplay').textContent = '0';
   showScreen('amount');
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────────
+// Terminal Gateway avisa por acá el resultado, el vencimiento y el comprobante de cada venta.
+// El polling de /status sigue como respaldo: si el WebSocket no conecta, el cajero funciona igual.
+
+const ws = { socket: null, url: null, token: null, retry: 1000, timer: null };
+
+function wsUrl() {
+  return getApiBase().replace(/\/$/, '').replace(/^http/, 'ws') + '/ws';
+}
+
+function connectWS() {
+  const url = wsUrl();
+  const token = getTerminalToken();
+  const open = ws.socket && ws.socket.readyState <= WebSocket.OPEN;
+  if (open && ws.url === url && ws.token === token) return;
+
+  if (ws.socket) {
+    ws.socket.onclose = null;
+    ws.socket.close();
+  }
+  clearTimeout(ws.timer);
+  ws.url = url;
+  ws.token = token;
+  setWsStatus('connecting');
+
+  let socket;
+  try {
+    socket = new WebSocket(url);
+  } catch (e) {
+    scheduleReconnect();
+    return;
+  }
+  ws.socket = socket;
+
+  socket.onopen = () => {
+    // El primer mensaje autentica: con el token del terminal o, sin tokens configurados, con su ID.
+    socket.send(JSON.stringify(token ? { type: 'auth', token } : { type: 'auth', terminal_id: TEST_TERMINAL_ID }));
+  };
+  socket.onmessage = (e) => {
+    try {
+      handleWSMessage(JSON.parse(e.data));
+    } catch (err) {
+      console.warn('websocket: mensaje inválido', err);
+    }
+  };
+  socket.onclose = () => {
+    ws.socket = null;
+    setWsStatus('offline');
+    scheduleReconnect();
+  };
+}
+
+// scheduleReconnect reintenta con una espera creciente, de 1 a 30 segundos.
+function scheduleReconnect() {
+  clearTimeout(ws.timer);
+  ws.timer = setTimeout(connectWS, ws.retry);
+  ws.retry = Math.min(ws.retry * 2, 30000);
+}
+
+function handleWSMessage(msg) {
+  switch (msg.type) {
+    case 'auth.ok':
+      ws.retry = 1000;
+      setWsStatus('online');
+      break;
+    case 'error':
+      console.warn('websocket:', msg.code, msg.message);
+      break;
+    case 'session.result':
+      if (msg.transaction_id === state.txId) {
+        showResult(msg.state === 'APPROVED' ? 'approved' : 'rejected', msg);
+      }
+      break;
+    case 'session.expired':
+      if (msg.transaction_id === state.txId) showResult('expired', null);
+      break;
+    case 'receipt':
+      console.info('comprobante recibido', msg);
+      break;
+  }
+}
+
+function setWsStatus(status) {
+  const labels = { online: 'EN LÍNEA', connecting: 'CONECTANDO', offline: 'SIN WEBSOCKET' };
+  setEl('wsStatus', labels[status] || status);
+  const dot = document.getElementById('wsDot');
+  if (dot) dot.classList.toggle('offline', status !== 'online');
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

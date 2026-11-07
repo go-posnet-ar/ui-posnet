@@ -97,6 +97,11 @@ body {
   animation: blink 2.5s ease-in-out infinite;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+/* Sin WebSocket: el cajero sigue consultando el estado, pero no recibe avisos. */
+.status-dot.offline {
+  background: var(--text-3);
+  animation: none;
+}
 
 /* ── Pantalla ───────────────────────────────────────────────── */
 .screen {

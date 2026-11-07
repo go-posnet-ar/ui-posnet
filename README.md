@@ -23,7 +23,8 @@ GET /api/sessions/{id}/status  (polling cada 1,5 s)                  GET  /api/s
 ```
 
 1. El cajero ingresa el monto y crea la sesión. La respuesta trae `qr_content`, la URL de la página de pago.
-2. El cajero dibuja el QR y consulta el estado hasta tener un resultado, o hasta que vence la sesión (5 minutos).
+2. El cajero dibuja el QR y espera el resultado por el [WebSocket](#websocket). Además consulta el estado cada 1,5 s,
+   por si el WebSocket no está conectado, hasta tener un resultado o hasta que vence la sesión (5 minutos).
 3. El teléfono abre la URL, consulta la sesión, muestra el monto y, 1,5 s después, paga solo.
 4. Las dos páginas muestran el resultado: aprobado con su código de autorización, rechazado con su motivo, o vencido. Si
    el rechazo trae `capture_card` (el emisor ordenó retener la tarjeta, o está en la blocklist), el cajero muestra
@@ -43,11 +44,30 @@ Todos pasan por el API Gateway de posnet, en el puerto 8000, que los envía a Te
 | Cajero y teléfono | `GET /api/sessions/{id}/status` | `X-Session-Token` |
 | Cajero (SIMULAR PAGO) y teléfono | `POST /api/sessions/{id}/pay` | `X-Session-Token` |
 | Cajero (CANCELAR) | `POST /sessions/{id}/cancel` | `Authorization`, si se cargó el token del terminal, y `X-Terminal-ID` |
+| Cajero | `GET /ws` (WebSocket) | — (se autentica con el primer mensaje) |
 
 Sin tokens de terminal configurados, Terminal Gateway identifica al terminal por `X-Terminal-ID`, que el cajero envía con el
 terminal de prueba de posnet (`TRM-0001`). Con tokens, lo ignora y usa el del token.
 
 Los datos de tarjeta son fijos: `VISA` con `0000` desde el teléfono y `1234` desde el cajero.
+
+## WebSocket
+
+El cajero abre un WebSocket con Terminal Gateway, en `ws://<API>/ws`, para recibir el resultado sin esperar a la próxima
+consulta:
+
+- **Autenticación:** el primer mensaje es `{"type":"auth","token":"..."}`, con el token del terminal del campo **TOKEN**.
+  Sin token, envía `{"type":"auth","terminal_id":"..."}` con el terminal de prueba, que Terminal Gateway solo acepta si no
+  tiene tokens configurados.
+- **Mensajes:** con `session.result` y `session.expired` de la venta en curso, muestra el resultado. `receipt`, el
+  comprobante, queda en la consola del navegador.
+- **Indicador:** arriba a la derecha muestra **EN LÍNEA** con el WebSocket conectado y **SIN WEBSOCKET** si no. Sin
+  WebSocket, el cajero sigue funcionando con las consultas a `/status`.
+- **Reconexión:** si se corta, reintenta con una espera creciente, de 1 a 30 segundos. Si cambian la API o el token, se
+  reconecta al crear la próxima venta.
+
+Mientras el cajero tenga el WebSocket abierto, Notification puede entregarle el comprobante de cada venta. Con el cajero
+cerrado, los comprobantes no se entregan.
 
 ## Token de la sesión
 
