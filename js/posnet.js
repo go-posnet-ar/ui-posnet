@@ -6,6 +6,7 @@ const API_BASE_KEY = 'posnet_api_base';
 const state = {
   amountCents: 0,
   txId: null,
+  payToken: null, // Token de la sesión: lo exigen /pay y /status
   ttlTotal: 300,
   ttlRemaining: 300,
   ttlInterval: null,
@@ -90,6 +91,7 @@ async function createSession() {
     if (!res.ok) throw new Error(data.message || 'error al crear sesión');
 
     state.txId = data.transaction_id;
+    state.payToken = data.pay_token || null;
     state.ttlTotal = data.ttl_seconds || 300;
     state.ttlRemaining = state.ttlTotal;
 
@@ -173,7 +175,9 @@ function startPolling() {
   state.pollInterval = setInterval(async () => {
     if (!state.txId) return;
     try {
-      const res = await fetch(getApiBase() + '/api/sessions/' + state.txId + '/status');
+      const res = await fetch(getApiBase() + '/api/sessions/' + state.txId + '/status', {
+        headers: sessionHeaders(),
+      });
       const data = await res.json();
 
       if (data.state === 'APPROVED') {
@@ -207,7 +211,7 @@ async function simulatePay() {
   try {
     const res = await fetch(getApiBase() + '/api/sessions/' + state.txId + '/pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: sessionHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ card_last4: '1234', card_network: 'VISA', entry_mode: 'QR' }),
     });
 
@@ -319,6 +323,7 @@ function newTransaction() {
 
   state.amountCents = 0;
   state.txId = null;
+  state.payToken = null;
   clearError('amountError');
   clearError('qrError');
 
@@ -327,6 +332,12 @@ function newTransaction() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+// sessionHeaders agrega el token de la sesión, que Terminal Gateway exige en /pay y /status.
+function sessionHeaders(headers = {}) {
+  if (state.payToken) headers['X-Session-Token'] = state.payToken;
+  return headers;
+}
 
 function setEl(id, text) {
   const el = document.getElementById(id);

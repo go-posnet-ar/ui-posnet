@@ -3,6 +3,7 @@
 
 const state = {
   txId: null,
+  payToken: null, // Token de la sesión, en el fragmento del QR: /pay/{id}#t=<token>
   apiBase: null,
   ttlTotal: 300,
   ttlRemaining: 300,
@@ -16,6 +17,13 @@ async function init() {
   // Extraer transaction_id de la URL: /pay/{id}
   const parts = window.location.pathname.split('/');
   state.txId = parts[parts.length - 1];
+
+  // El token viaja en el fragmento: el navegador no lo envía al servidor web, así que no queda en
+  // sus logs. Se saca de la barra de direcciones para que no se comparta al copiar la URL.
+  state.payToken = new URLSearchParams(window.location.hash.slice(1)).get('t');
+  if (window.location.hash) {
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
 
   // API base = mismo host que sirvió esta página
   state.apiBase = window.location.origin;
@@ -32,7 +40,9 @@ async function init() {
 
 async function loadSession() {
   try {
-    const res = await fetch(state.apiBase + '/api/sessions/' + state.txId + '/status');
+    const res = await fetch(state.apiBase + '/api/sessions/' + state.txId + '/status', {
+      headers: sessionHeaders(),
+    });
     const data = await res.json();
 
     if (!res.ok || !data.transaction_id) {
@@ -108,7 +118,7 @@ async function initiatePay() {
   try {
     const res = await fetch(state.apiBase + '/api/sessions/' + state.txId + '/pay', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: sessionHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         card_last4:   '0000',
         card_network: 'VISA',
@@ -162,7 +172,9 @@ function pollResult() {
     }
 
     try {
-      const res = await fetch(state.apiBase + '/api/sessions/' + state.txId + '/status');
+      const res = await fetch(state.apiBase + '/api/sessions/' + state.txId + '/status', {
+        headers: sessionHeaders(),
+      });
       const data = await res.json();
 
       if (data.state === 'APPROVED') {
@@ -247,6 +259,12 @@ function showError(msg) {
 }
 
 // ── Helper ────────────────────────────────────────────────────────────────────
+
+// sessionHeaders agrega el token de la sesión, que Terminal Gateway exige en /pay y /status.
+function sessionHeaders(headers = {}) {
+  if (state.payToken) headers['X-Session-Token'] = state.payToken;
+  return headers;
+}
 
 function setEl(id, val) {
   const el = document.getElementById(id);
